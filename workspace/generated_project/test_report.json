@@ -1,0 +1,60 @@
+{
+    "status": "FAIL",
+    "summary": "The frontend provides task CRUD and status changes using localStorage, and the backend provides SQLite-backed task CRUD. They are separate implementations: the frontend never calls the API, so tasks are not shared with the backend or persisted in SQLite. The supplied requirements and acceptance criteria describe an expense tracker, which this task management app does not implement.",
+    "issues": [
+        {
+            "severity": "HIGH",
+            "file": "requirements.md, acceptance_criteria.md, design_spec.md",
+            "problem": "These documents specify expense tracking, including expenses, categories, monthly totals, and spending summaries. The generated frontend and backend implement tasks instead, so they do not meet the documented requirements or acceptance criteria.",
+            "suggested_fix": "Align the project documents with the TaskFlow task management scope, or implement the expense tracker described in the documents."
+        },
+        {
+            "severity": "HIGH",
+            "file": "frontend/script.js, backend/main.py",
+            "problem": "The frontend stores tasks only in localStorage and never calls the backend. Backend CRUD routes therefore do not power the UI, and frontend changes are not persisted in SQLite or available through the API.",
+            "suggested_fix": "Choose one persistence source for the app. To use the provided backend, replace localStorage CRUD with requests to the task endpoints and load, create, update, and delete tasks through the API."
+        },
+        {
+            "severity": "HIGH",
+            "file": "frontend/script.js, backend/main.py",
+            "problem": "The frontend generates string UUIDs and uses camelCase `dueDate`; the backend uses integer task IDs and returns snake_case `due_date`. Direct API integration will fail unless the frontend maps these fields and uses server-issued IDs.",
+            "suggested_fix": "Use the integer IDs returned by the API and convert `due_date` to and from the frontend's date field in a shared API adapter."
+        },
+        {
+            "severity": "MEDIUM",
+            "file": "frontend/script.js",
+            "problem": "The Today view includes every completed task, even when its due date is not today or is absent. The filter condition exempts completed tasks from the due-date check.",
+            "suggested_fix": "Filter Today by due date only, or explicitly define and implement whether completed tasks due today should remain visible."
+        },
+        {
+            "severity": "MEDIUM",
+            "file": "backend/database.py",
+            "problem": "Each database function opens a SQLite connection with a context manager, but SQLite's connection context manager commits or rolls back without closing the connection. Repeated requests can leave connections open.",
+            "suggested_fix": "Close connections explicitly, such as with `contextlib.closing`, while retaining transaction handling."
+        },
+        {
+            "severity": "MEDIUM",
+            "file": "backend/main.py",
+            "problem": "The database import is `from database import ...`. It works when starting Uvicorn from the backend directory as `uvicorn main:app`, but can fail when importing the app as `backend.main:app` from the project root.",
+            "suggested_fix": "Use package-relative imports with a package structure, or document and consistently use the backend-directory launch command."
+        },
+        {
+            "severity": "MEDIUM",
+            "file": "backend/main.py, backend/requirements.txt",
+            "problem": "The code uses `date | None` and `list[Task]`, which require Python 3.10 or newer, but the supported Python version is not documented or constrained.",
+            "suggested_fix": "Document Python 3.10+ as a requirement, or use compatible typing syntax if older Python versions must be supported."
+        },
+        {
+            "severity": "LOW",
+            "file": "frontend/style.css",
+            "problem": "The stylesheet imports fonts from Google Fonts, introducing an external network request and third-party dependency. The app can still fall back to sans-serif, but the design may vary offline.",
+            "suggested_fix": "Use a system font stack or package local font files if consistent typography is required."
+        }
+    ],
+    "recommendations": [
+        "Add backend tests for task creation, listing, retrieval, update, deletion, validation, missing IDs, and SQLite persistence.",
+        "Add integration checks confirming that frontend requests match the backend's paths, request fields, response fields, and status codes.",
+        "Consider handling SQLite failures with a consistent JSON error response and logging details server-side.",
+        "Document how to run the backend, serve the frontend, configure the database path, and connect the frontend to the API."
+    ]
+}
